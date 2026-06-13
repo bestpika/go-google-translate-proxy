@@ -21,6 +21,7 @@
 - [x] 執行 `gofmt`。
 - [x] 執行 `go test ./...`。
 - [x] 視實作結果更新 `README.md`、`SPEC.md`、`API_SPEC.md` 與 `openapi.yaml`。
+- [x] 新增 MIT 授權檔並更新 README 授權說明。
 
 ## 提交策略
 

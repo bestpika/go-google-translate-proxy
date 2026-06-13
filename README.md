@@ -125,3 +125,9 @@ Content-Type: application/json
 - `API_SPEC.md`：HTTP API 細節。
 - `openapi.yaml`：OpenAPI 規格。
 - `PLAN.md`：實作 TODO。
+
+## 授權
+
+本專案採用 MIT License。詳見 `LICENSE`。
+
+此授權僅涵蓋本專案程式碼與文件，不代表授權使用 Google Translate API、API key 或 Google 服務本身。
