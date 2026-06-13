@@ -15,7 +15,8 @@
 複製 `.env.example` 為 `.env`，並填入自己的 Google Translate API key。
 
 ```env
-GOOGLE_TRANSLATE_API_KEY=your_google_translate_api_key
+GOOGLE_TRANSLATE_URL=https://translate-pa.googleapis.com/v1/translateHtml
+GOOGLE_TRANSLATE_API_KEY=AIzaSyATBXajvzQLTDHEQbcpq0Ihe0vWDHmO520
 PORT=8080
 ```
 
@@ -23,13 +24,19 @@ PORT=8080
 
 部署環境可直接設定系統環境變數，不一定需要 `.env` 檔案。
 
-## 預計啟動方式
+## 啟動方式
 
 ```powershell
 go run .
 ```
 
 預設監聽連接埠為 `8080`，可透過 `PORT` 覆寫。
+
+## 測試
+
+```powershell
+go test ./...
+```
 
 ## Immersive Translate 設定
 
