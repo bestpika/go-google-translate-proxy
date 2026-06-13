@@ -10,7 +10,7 @@
 - 透過環境變數管理 Google API key，不將金鑰提交到版本控制。
 - 提供 `GET /healthz` 作為健康檢查。
 - 首次啟動若沒有 `.env`，會使用 `.env.example` 範本自動建立。
-- 提供 `build.ps1` 編譯 Windows、Linux、macOS 的 x86 與 ARM 執行檔到 `dist` 目錄。
+- 提供 `build.ps1` 編譯目前環境，或依參數編譯 Windows、Linux、macOS 的 x86 與 ARM 執行檔到 `dist` 目錄。
 
 ## 設定
 
@@ -40,7 +40,18 @@ go run .
 .\build.ps1
 ```
 
-預設會編譯所有支援的 x86 與 ARM 目標，結果會輸出到 `dist` 目錄。
+預設只會編譯目前 Go 環境，結果會輸出到 `dist` 目錄。
+
+| 指令 | 說明 |
+| --- | --- |
+| `.\build.ps1` | 編譯目前環境。 |
+| `.\build.ps1 -Windows` | 編譯所有 Windows 目標。 |
+| `.\build.ps1 -Linux` | 編譯所有 Linux 目標。 |
+| `.\build.ps1 -MacOS` | 編譯所有 macOS 目標。 |
+| `.\build.ps1 -Windows -Linux` | 同時編譯 Windows 與 Linux 目標。 |
+| `.\build.ps1 -All` | 編譯全部支援目標。 |
+
+支援目標如下：
 
 | 檔案 | 平台 |
 | --- | --- |
@@ -62,7 +73,7 @@ macOS 目前在 Go 1.21 僅支援 `amd64` 與 `arm64`。
 若要先清空舊的 `dist` 目錄再編譯：
 
 ```powershell
-.\build.ps1 -Clean
+.\build.ps1 -Clean -All
 ```
 
 ## 測試

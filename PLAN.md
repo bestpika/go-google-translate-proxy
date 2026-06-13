@@ -15,6 +15,7 @@
 - [x] 撰寫 `.env` 自動建立測試。
 - [x] 新增 `build.ps1` 編譯腳本。
 - [x] 支援 Windows、Linux、macOS 的 x86 與 ARM 編譯輸出。
+- [x] 調整 `build.ps1` 預設只編譯目前環境，並用平台參數選擇輸出目標。
 - [x] 將編譯輸出目錄 `dist` 加入忽略。
 - [x] 執行 `gofmt`。
 - [x] 執行 `go test ./...`。
