@@ -10,7 +10,7 @@
 - 透過環境變數管理 Google API key，不將金鑰提交到版本控制。
 - 提供 `GET /healthz` 作為健康檢查。
 - 首次啟動若沒有 `.env`，會使用 `.env.example` 範本自動建立。
-- 提供 `build.ps1` 編譯單一執行檔到 `dist` 目錄。
+- 提供 `build.ps1` 編譯 Windows、Linux、macOS 的 x86 與 ARM 執行檔到 `dist` 目錄。
 
 ## 設定
 
@@ -40,11 +40,24 @@ go run .
 .\build.ps1
 ```
 
-編譯結果會輸出到：
+預設會編譯所有支援的 x86 與 ARM 目標，結果會輸出到 `dist` 目錄。
 
-```text
-dist\go-google-translate-proxy.exe
-```
+| 檔案 | 平台 |
+| --- | --- |
+| `go-google-translate-proxy-windows-386.exe` | Windows x86 32-bit |
+| `go-google-translate-proxy-windows-amd64.exe` | Windows x86 64-bit |
+| `go-google-translate-proxy-windows-armv7.exe` | Windows ARM 32-bit |
+| `go-google-translate-proxy-windows-arm64.exe` | Windows ARM 64-bit |
+| `go-google-translate-proxy-linux-386` | Linux x86 32-bit |
+| `go-google-translate-proxy-linux-amd64` | Linux x86 64-bit |
+| `go-google-translate-proxy-linux-armv5` | Linux ARMv5 32-bit |
+| `go-google-translate-proxy-linux-armv6` | Linux ARMv6 32-bit |
+| `go-google-translate-proxy-linux-armv7` | Linux ARMv7 32-bit |
+| `go-google-translate-proxy-linux-arm64` | Linux ARM 64-bit |
+| `go-google-translate-proxy-macos-amd64` | macOS x86 64-bit |
+| `go-google-translate-proxy-macos-arm64` | macOS ARM 64-bit |
+
+macOS 目前在 Go 1.21 僅支援 `amd64` 與 `arm64`。
 
 若要先清空舊的 `dist` 目錄再編譯：
 
