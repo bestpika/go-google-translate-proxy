@@ -54,6 +54,8 @@ Content-Type: application/json
 | `target_lang` | string | 是 | 目標語言代碼。 |
 | `text_list` | string array | 是 | 待翻譯文字清單，至少一筆。 |
 
+請求 body 最大 1 MiB，超過時回傳 `413 Payload Too Large`。
+
 #### 成功回應
 
 ```json
@@ -88,6 +90,7 @@ Content-Type: application/json
 | HTTP 狀態碼 | 情境 |
 | --- | --- |
 | `400` | JSON 格式錯誤、必要欄位缺漏或 `text_list` 為空。 |
+| `413` | 請求 body 超過 1 MiB。 |
 | `405` | 使用不支援的方法。 |
 | `500` | 服務設定錯誤，例如未設定 API key。 |
 | `502` | Google 上游錯誤、回應格式不符或網路錯誤。 |

@@ -11,6 +11,7 @@
 - [x] 實作 Google Translate `translateHtml` client。
 - [x] 將 Google 回應映射為 Immersive Translate 回應格式。
 - [x] 加入一致的 JSON 錯誤回應格式。
+- [x] 加入 HTTP server 逾時與 1 MiB 請求 body 限制，降低資源耗盡風險。
 - [x] 撰寫 handler 與 Google client 測試。
 - [x] 撰寫 `.env` 自動建立測試。
 - [x] 新增 `build.ps1` 編譯腳本。

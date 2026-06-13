@@ -7,6 +7,7 @@
 - 提供 Immersive Translate 自訂 API 相容的 `POST /translate` 端點。
 - 接收 `source_lang`、`target_lang`、`text_list`，批次轉送至 Google Translate。
 - 回傳 `translations` 陣列，保持與 Immersive Translate 文件一致。
+- 限制單次請求 body 最大 1 MiB，避免異常請求占用過多資源。
 - 透過環境變數管理 Google API key，不將金鑰提交到版本控制。
 - 提供 `GET /healthz` 作為健康檢查。
 - 首次啟動若沒有 `.env`，會使用 `.env.example` 範本自動建立。

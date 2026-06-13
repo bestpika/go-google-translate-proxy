@@ -53,6 +53,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "413":
+          description: 請求 body 超過 1 MiB
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "405":
           description: HTTP 方法不支援
           content:
@@ -75,6 +81,7 @@ components:
   schemas:
     TranslateRequest:
       type: object
+      description: 請求 body 最大 1 MiB。
       required:
         - target_lang
         - text_list
