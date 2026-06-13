@@ -1,0 +1,128 @@
+openapi: 3.0.3
+info:
+  title: Google Translate Proxy for Immersive Translate
+  version: 0.1.0
+  description: 將 Google Translate translateHtml 包裝成 Immersive Translate 自訂 API 的服務。
+servers:
+  - url: http://localhost:8080
+paths:
+  /healthz:
+    get:
+      summary: 健康檢查
+      operationId: healthz
+      responses:
+        "200":
+          description: 服務正常
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                properties:
+                  status:
+                    type: string
+                    example: ok
+  /translate:
+    post:
+      summary: 翻譯文字陣列
+      operationId: translate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TranslateRequest"
+            examples:
+              basic:
+                value:
+                  source_lang: en
+                  target_lang: zh-TW
+                  text_list:
+                    - Hello world
+      responses:
+        "200":
+          description: 翻譯成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranslateResponse"
+        "400":
+          description: 請求格式錯誤
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "405":
+          description: HTTP 方法不支援
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: 服務設定錯誤
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: Google 上游錯誤
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  schemas:
+    TranslateRequest:
+      type: object
+      required:
+        - target_lang
+        - text_list
+      properties:
+        source_lang:
+          type: string
+          description: 來源語言代碼，空值時視為 auto。
+          example: en
+        target_lang:
+          type: string
+          description: 目標語言代碼。
+          example: zh-TW
+        text_list:
+          type: array
+          description: 待翻譯文字清單。
+          minItems: 1
+          items:
+            type: string
+          example:
+            - Hello world
+    TranslateResponse:
+      type: object
+      required:
+        - translations
+      properties:
+        translations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Translation"
+    Translation:
+      type: object
+      required:
+        - detected_source_lang
+        - text
+      properties:
+        detected_source_lang:
+          type: string
+          description: 偵測或使用的來源語言。
+          example: en
+        text:
+          type: string
+          description: 翻譯後文字。
+          example: 你好，世界
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          example: invalid request body
