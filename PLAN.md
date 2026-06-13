@@ -5,12 +5,16 @@
 - [x] 建立 Go module。
 - [x] 建立 HTTP server 入口。
 - [x] 加入 `.env` 載入邏輯，允許不存在 `.env` 時改用系統環境變數。
+- [x] 首次啟動若 `.env` 不存在，自動由 `.env.example` 建立。
 - [x] 實作 `GET /healthz` 健康檢查。
 - [x] 實作 `POST /translate` 請求解析與驗證。
 - [x] 實作 Google Translate `translateHtml` client。
 - [x] 將 Google 回應映射為 Immersive Translate 回應格式。
 - [x] 加入一致的 JSON 錯誤回應格式。
 - [x] 撰寫 handler 與 Google client 測試。
+- [x] 撰寫 `.env` 自動建立測試。
+- [x] 新增 `build.ps1` 編譯腳本。
+- [x] 將編譯輸出目錄 `dist` 加入忽略。
 - [x] 執行 `gofmt`。
 - [x] 執行 `go test ./...`。
 - [x] 視實作結果更新 `README.md`、`SPEC.md`、`API_SPEC.md` 與 `openapi.yaml`。
