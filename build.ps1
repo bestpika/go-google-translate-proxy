@@ -2,7 +2,11 @@
 param(
     [string]$OutputDir = "dist",
     [string]$BinaryName = "go-google-translate-proxy",
-    [switch]$Clean
+    [switch]$Clean,
+    [switch]$Windows,
+    [switch]$Linux,
+    [switch]$MacOS,
+    [switch]$All
 )
 
 $ErrorActionPreference = "Stop"
@@ -10,7 +14,80 @@ $ErrorActionPreference = "Stop"
 $ProjectRoot = $PSScriptRoot
 $OutputPath = Join-Path -Path $ProjectRoot -ChildPath $OutputDir
 
-$Targets = @(
+function Get-TargetLabel {
+    param(
+        [string]$GOOS,
+        [string]$GOARCH,
+        [string]$GOARM
+    )
+
+    $osLabel = $GOOS
+    if ($GOOS -eq "darwin") {
+        $osLabel = "macos"
+    }
+
+    $archLabel = $GOARCH
+    if ($GOARCH -eq "arm" -and $GOARM) {
+        $archLabel = "armv$GOARM"
+    }
+
+    return "$osLabel-$archLabel"
+}
+
+function Get-TargetExtension {
+    param([string]$GOOS)
+
+    if ($GOOS -eq "windows") {
+        return ".exe"
+    }
+
+    return ""
+}
+
+function New-BuildTarget {
+    param(
+        [string]$GOOS,
+        [string]$GOARCH,
+        [string]$GOARM
+    )
+
+    if ($GOARCH -ne "arm") {
+        $GOARM = $null
+    }
+
+    return [pscustomobject]@{
+        GOOS      = $GOOS
+        GOARCH    = $GOARCH
+        GOARM     = $GOARM
+        Label     = Get-TargetLabel -GOOS $GOOS -GOARCH $GOARCH -GOARM $GOARM
+        Extension = Get-TargetExtension -GOOS $GOOS
+    }
+}
+
+function Get-GoEnvValue {
+    param([string]$Name)
+
+    $value = (& go env $Name).Trim()
+    if ($LASTEXITCODE -ne 0) {
+        throw "go env $Name failed"
+    }
+
+    return $value
+}
+
+function Get-CurrentBuildTarget {
+    $currentGOOS = Get-GoEnvValue -Name "GOOS"
+    $currentGOARCH = Get-GoEnvValue -Name "GOARCH"
+    $currentGOARM = $null
+
+    if ($currentGOARCH -eq "arm") {
+        $currentGOARM = Get-GoEnvValue -Name "GOARM"
+    }
+
+    return New-BuildTarget -GOOS $currentGOOS -GOARCH $currentGOARCH -GOARM $currentGOARM
+}
+
+$AllTargets = @(
     [pscustomobject]@{ GOOS = "windows"; GOARCH = "386";   GOARM = $null; Label = "windows-386";   Extension = ".exe" },
     [pscustomobject]@{ GOOS = "windows"; GOARCH = "amd64"; GOARM = $null; Label = "windows-amd64"; Extension = ".exe" },
     [pscustomobject]@{ GOOS = "windows"; GOARCH = "arm";   GOARM = "7";   Label = "windows-armv7"; Extension = ".exe" },
@@ -24,6 +101,27 @@ $Targets = @(
     [pscustomobject]@{ GOOS = "darwin";  GOARCH = "amd64"; GOARM = $null; Label = "macos-amd64";   Extension = "" },
     [pscustomobject]@{ GOOS = "darwin";  GOARCH = "arm64"; GOARM = $null; Label = "macos-arm64";   Extension = "" }
 )
+
+if ($All) {
+    $Targets = @($AllTargets)
+}
+else {
+    $Targets = @()
+
+    if ($Windows) {
+        $Targets += @($AllTargets | Where-Object { $_.GOOS -eq "windows" })
+    }
+    if ($Linux) {
+        $Targets += @($AllTargets | Where-Object { $_.GOOS -eq "linux" })
+    }
+    if ($MacOS) {
+        $Targets += @($AllTargets | Where-Object { $_.GOOS -eq "darwin" })
+    }
+
+    if ($Targets.Count -eq 0) {
+        $Targets = @(Get-CurrentBuildTarget)
+    }
+}
 
 if ($Clean -and (Test-Path -LiteralPath $OutputPath)) {
     Remove-Item -LiteralPath $OutputPath -Recurse -Force
