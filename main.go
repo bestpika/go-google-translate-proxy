@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -20,6 +21,9 @@ const (
 	defaultGoogleURL      = "https://translate-pa.googleapis.com/v1/translateHtml"
 	googleTranslateClient = "wt_lib"
 )
+
+//go:embed .env.example
+var embeddedEnvExample string
 
 type config struct {
 	Port      string
@@ -61,6 +65,9 @@ type errorResponse struct {
 }
 
 func main() {
+	if err := ensureDotEnv(".env", ".env.example"); err != nil {
+		log.Fatalf("ensure .env: %v", err)
+	}
 	if err := loadDotEnv(".env"); err != nil {
 		log.Fatalf("load .env: %v", err)
 	}
@@ -92,6 +99,27 @@ func envOrDefault(key string, fallback string) string {
 		return fallback
 	}
 	return value
+}
+
+func ensureDotEnv(path string, examplePath string) error {
+	if _, err := os.Stat(path); err == nil {
+		return nil
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+
+	content, err := os.ReadFile(examplePath)
+	if errors.Is(err, os.ErrNotExist) {
+		content = []byte(embeddedEnvExample)
+	} else if err != nil {
+		return err
+	}
+
+	if len(content) == 0 {
+		return errors.New(".env.example is empty")
+	}
+
+	return os.WriteFile(path, content, 0o600)
 }
 
 func loadDotEnv(path string) error {

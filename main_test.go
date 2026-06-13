@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
@@ -252,4 +253,71 @@ func TestLoadDotEnv(t *testing.T) {
 	if got := os.Getenv("DOTENV_EXISTING"); got != "from-env" {
 		t.Fatalf("DOTENV_EXISTING = %q", got)
 	}
+}
+
+func TestEnsureDotEnv(t *testing.T) {
+	t.Run("copies example file", func(t *testing.T) {
+		dir := t.TempDir()
+		envPath := filepath.Join(dir, ".env")
+		examplePath := filepath.Join(dir, ".env.example")
+		want := []byte("GOOGLE_TRANSLATE_API_KEY=test-key\nPORT=8080\n")
+
+		if err := os.WriteFile(examplePath, want, 0o600); err != nil {
+			t.Fatalf("write .env.example: %v", err)
+		}
+		if err := ensureDotEnv(envPath, examplePath); err != nil {
+			t.Fatalf("ensureDotEnv returned error: %v", err)
+		}
+
+		got, err := os.ReadFile(envPath)
+		if err != nil {
+			t.Fatalf("read .env: %v", err)
+		}
+		if !bytes.Equal(got, want) {
+			t.Fatalf(".env = %q, want %q", got, want)
+		}
+	})
+
+	t.Run("keeps existing env file", func(t *testing.T) {
+		dir := t.TempDir()
+		envPath := filepath.Join(dir, ".env")
+		examplePath := filepath.Join(dir, ".env.example")
+		want := []byte("GOOGLE_TRANSLATE_API_KEY=existing\n")
+
+		if err := os.WriteFile(envPath, want, 0o600); err != nil {
+			t.Fatalf("write .env: %v", err)
+		}
+		if err := os.WriteFile(examplePath, []byte("GOOGLE_TRANSLATE_API_KEY=example\n"), 0o600); err != nil {
+			t.Fatalf("write .env.example: %v", err)
+		}
+		if err := ensureDotEnv(envPath, examplePath); err != nil {
+			t.Fatalf("ensureDotEnv returned error: %v", err)
+		}
+
+		got, err := os.ReadFile(envPath)
+		if err != nil {
+			t.Fatalf("read .env: %v", err)
+		}
+		if !bytes.Equal(got, want) {
+			t.Fatalf(".env = %q, want %q", got, want)
+		}
+	})
+
+	t.Run("uses embedded example when file is missing", func(t *testing.T) {
+		dir := t.TempDir()
+		envPath := filepath.Join(dir, ".env")
+		examplePath := filepath.Join(dir, ".env.example")
+
+		if err := ensureDotEnv(envPath, examplePath); err != nil {
+			t.Fatalf("ensureDotEnv returned error: %v", err)
+		}
+
+		got, err := os.ReadFile(envPath)
+		if err != nil {
+			t.Fatalf("read .env: %v", err)
+		}
+		if !bytes.Contains(got, []byte("GOOGLE_TRANSLATE_API_KEY=")) {
+			t.Fatalf("embedded .env does not contain GOOGLE_TRANSLATE_API_KEY: %q", got)
+		}
+	})
 }
