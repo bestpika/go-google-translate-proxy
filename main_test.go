@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -118,6 +119,19 @@ func TestHandleTranslateValidation(t *testing.T) {
 				t.Fatalf("status = %d, want %d", rec.Code, http.StatusBadRequest)
 			}
 		})
+	}
+}
+
+func TestHandleTranslateRequestBodyTooLarge(t *testing.T) {
+	app := newApp(&stubTranslator{})
+	body := `{"target_lang":"zh-TW","text_list":["` + strings.Repeat("a", maxRequestBodyBytes) + `"]}`
+	req := httptest.NewRequest(http.MethodPost, "/translate", strings.NewReader(body))
+	rec := httptest.NewRecorder()
+
+	app.routes().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusRequestEntityTooLarge)
 	}
 }
 

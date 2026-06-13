@@ -17,9 +17,15 @@ import (
 )
 
 const (
-	defaultPort           = "8080"
-	defaultGoogleURL      = "https://translate-pa.googleapis.com/v1/translateHtml"
-	googleTranslateClient = "wt_lib"
+	defaultPort             = "8080"
+	defaultGoogleURL        = "https://translate-pa.googleapis.com/v1/translateHtml"
+	googleTranslateClient   = "wt_lib"
+	maxRequestBodyBytes     = 1 << 20
+	maxGoogleResponseBytes  = 1 << 20
+	serverReadHeaderTimeout = 10 * time.Second
+	serverReadTimeout       = 15 * time.Second
+	serverWriteTimeout      = 45 * time.Second
+	serverIdleTimeout       = 60 * time.Second
 )
 
 //go:embed .env.example
@@ -76,7 +82,10 @@ func main() {
 	server := &http.Server{
 		Addr:              ":" + cfg.Port,
 		Handler:           newApp(newGoogleTranslator(cfg.GoogleURL, cfg.APIKey, nil)).routes(),
-		ReadHeaderTimeout: 10 * time.Second,
+		ReadHeaderTimeout: serverReadHeaderTimeout,
+		ReadTimeout:       serverReadTimeout,
+		WriteTimeout:      serverWriteTimeout,
+		IdleTimeout:       serverIdleTimeout,
 	}
 
 	log.Printf("listening on :%s", cfg.Port)
@@ -196,7 +205,7 @@ func (t *googleTranslator) Translate(ctx context.Context, sourceLang string, tar
 	}
 	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxGoogleResponseBytes))
 	if err != nil {
 		return nil, fmt.Errorf("read google response: %w", err)
 	}
@@ -269,12 +278,18 @@ func (a *app) handleTranslate(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusMethodNotAllowed, errorResponse{Error: "method not allowed"})
 		return
 	}
+	r.Body = http.MaxBytesReader(w, r.Body, maxRequestBodyBytes)
 	defer r.Body.Close()
 
 	var req translateRequest
-	decoder := json.NewDecoder(io.LimitReader(r.Body, 1<<20))
+	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&req); err != nil {
+		var maxBytesErr *http.MaxBytesError
+		if errors.As(err, &maxBytesErr) {
+			writeJSON(w, http.StatusRequestEntityTooLarge, errorResponse{Error: "request body too large"})
+			return
+		}
 		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid request body"})
 		return
 	}
