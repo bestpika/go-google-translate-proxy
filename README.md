@@ -12,6 +12,7 @@
 - 提供 `GET /healthz` 作為健康檢查。
 - 首次啟動若沒有 `.env`，會使用 `.env.example` 範本自動建立。
 - 提供 `build.ps1` 編譯目前環境，或依參數編譯 Windows、Linux、macOS 的 x86 與 ARM 執行檔到 `dist` 目錄。
+- 提供 GitHub Actions，在推送 `v*` tag 時全平台編譯並上傳 GitHub Release。
 
 ## 設定
 
@@ -74,6 +75,22 @@ macOS 目前在 Go 1.21 僅支援 `amd64` 與 `arm64`。
 若要先清空舊的 `dist` 目錄再編譯：
 
 ```powershell
+.\build.ps1 -Clean -All
+```
+
+## 發佈
+
+推送 `v` 開頭的 tag 時，GitHub Actions 會執行測試、全平台編譯，並將 `dist` 目錄內所有檔案上傳到同一個 tag 的 GitHub Release。
+
+```powershell
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+Release workflow 會執行：
+
+```powershell
+go test ./...
 .\build.ps1 -Clean -All
 ```
 

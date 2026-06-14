@@ -22,9 +22,12 @@
 - [x] 執行 `go test ./...`。
 - [x] 視實作結果更新 `README.md`、`SPEC.md`、`API_SPEC.md` 與 `openapi.yaml`。
 - [x] 新增 MIT 授權檔並更新 README 授權說明。
+- [x] 新增 GitHub Actions release workflow，於 `v*` tag push 時觸發。
+- [x] 在 release workflow 執行測試與全平台編譯。
+- [x] 將 `dist/*` 上傳至 GitHub Release。
+- [x] 更新 `README.md` 與 `SPEC.md` 的自動發佈說明。
 
 ## 提交策略
 
-- 文件先行提交，先固定規格與實作 TODO。
-- 程式碼完成後另行提交，避免文件與程式碼混在同一個提交中。
-- 若程式碼實作後導致文件需要修正，文件更新再獨立提交。
+- 程式碼或 CI workflow 完成後先提交。
+- 文件更新另行提交，避免文件與程式碼混在同一個提交中。
