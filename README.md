@@ -18,6 +18,8 @@
 
 首次啟動若沒有 `.env`，服務會使用 `.env.example` 範本自動建立。`.env.example` 已提供預設公開 Google Translate API key，也可以自行改用其他 key。
 
+若 `.env` 存在但沒有設定 `GOOGLE_TRANSLATE_API_KEY`，且系統環境變數也沒有設定，服務會使用程式內建的預設公開 API key。
+
 ```env
 GOOGLE_TRANSLATE_URL=https://translate-pa.googleapis.com/v1/translateHtml
 GOOGLE_TRANSLATE_API_KEY=AIzaSyATBXajvzQLTDHEQbcpq0Ihe0vWDHmO520
@@ -26,7 +28,7 @@ PORT=8080
 
 `.env` 只供本機覆寫設定使用，已由 `.gitignore` 忽略。若改用私人金鑰，請勿提交。
 
-部署環境可直接設定系統環境變數，不一定需要 `.env` 檔案。
+部署環境可直接設定系統環境變數，不一定需要 `.env` 檔案。若要使用自己的 key，請設定 `GOOGLE_TRANSLATE_API_KEY` 覆寫預設值。
 
 ## 啟動方式
 

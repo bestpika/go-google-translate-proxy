@@ -26,6 +26,9 @@
 - [x] 在 release workflow 執行測試與全平台編譯。
 - [x] 將 `dist/*` 上傳至 GitHub Release。
 - [x] 更新 `README.md` 與 `SPEC.md` 的自動發佈說明。
+- [x] 支援未設定 `GOOGLE_TRANSLATE_API_KEY` 時使用程式內建預設公開 key。
+- [x] 補上 `loadConfig` 預設值與環境變數覆寫測試。
+- [x] 更新 `README.md` 與 `SPEC.md` 的 API key 缺省行為說明。
 
 ## 提交策略
 
