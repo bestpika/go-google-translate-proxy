@@ -269,6 +269,44 @@ func TestLoadDotEnv(t *testing.T) {
 	}
 }
 
+func TestLoadConfig(t *testing.T) {
+	t.Run("uses defaults", func(t *testing.T) {
+		t.Setenv("PORT", "")
+		t.Setenv("GOOGLE_TRANSLATE_URL", "")
+		t.Setenv("GOOGLE_TRANSLATE_API_KEY", "")
+
+		got := loadConfig()
+
+		if got.Port != defaultPort {
+			t.Fatalf("port = %q, want %q", got.Port, defaultPort)
+		}
+		if got.GoogleURL != defaultGoogleURL {
+			t.Fatalf("google url = %q, want %q", got.GoogleURL, defaultGoogleURL)
+		}
+		if got.APIKey != defaultGoogleAPIKey {
+			t.Fatalf("api key = %q, want default key", got.APIKey)
+		}
+	})
+
+	t.Run("uses environment overrides", func(t *testing.T) {
+		t.Setenv("PORT", "9090")
+		t.Setenv("GOOGLE_TRANSLATE_URL", "https://example.test/translate")
+		t.Setenv("GOOGLE_TRANSLATE_API_KEY", "test-key")
+
+		got := loadConfig()
+
+		if got.Port != "9090" {
+			t.Fatalf("port = %q, want 9090", got.Port)
+		}
+		if got.GoogleURL != "https://example.test/translate" {
+			t.Fatalf("google url = %q, want override", got.GoogleURL)
+		}
+		if got.APIKey != "test-key" {
+			t.Fatalf("api key = %q, want test-key", got.APIKey)
+		}
+	})
+}
+
 func TestEnsureDotEnv(t *testing.T) {
 	t.Run("copies example file", func(t *testing.T) {
 		dir := t.TempDir()

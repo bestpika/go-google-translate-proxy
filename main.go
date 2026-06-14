@@ -19,6 +19,7 @@ import (
 const (
 	defaultPort             = "8080"
 	defaultGoogleURL        = "https://translate-pa.googleapis.com/v1/translateHtml"
+	defaultGoogleAPIKey     = "AIzaSyATBXajvzQLTDHEQbcpq0Ihe0vWDHmO520"
 	googleTranslateClient   = "wt_lib"
 	maxRequestBodyBytes     = 1 << 20
 	maxGoogleResponseBytes  = 1 << 20
@@ -98,7 +99,7 @@ func loadConfig() config {
 	return config{
 		Port:      envOrDefault("PORT", defaultPort),
 		GoogleURL: envOrDefault("GOOGLE_TRANSLATE_URL", defaultGoogleURL),
-		APIKey:    strings.TrimSpace(os.Getenv("GOOGLE_TRANSLATE_API_KEY")),
+		APIKey:    envOrDefault("GOOGLE_TRANSLATE_API_KEY", defaultGoogleAPIKey),
 	}
 }
 
