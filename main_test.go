@@ -13,6 +13,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/kardianos/service"
 )
 
 type stubTranslator struct {
@@ -305,6 +307,56 @@ func TestLoadConfig(t *testing.T) {
 			t.Fatalf("api key = %q, want test-key", got.APIKey)
 		}
 	})
+}
+
+func TestApplyServiceRunArgs(t *testing.T) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("get cwd: %v", err)
+	}
+	dir := t.TempDir()
+	t.Cleanup(func() {
+		if err := os.Chdir(cwd); err != nil {
+			t.Fatalf("restore cwd: %v", err)
+		}
+	})
+
+	if err := applyServiceRunArgs([]string{serviceWorkDirFlag, dir}); err != nil {
+		t.Fatalf("applyServiceRunArgs returned error: %v", err)
+	}
+
+	got, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("get cwd: %v", err)
+	}
+	gotInfo, err := os.Stat(got)
+	if err != nil {
+		t.Fatalf("stat cwd: %v", err)
+	}
+	wantInfo, err := os.Stat(dir)
+	if err != nil {
+		t.Fatalf("stat temp dir: %v", err)
+	}
+	if !os.SameFile(gotInfo, wantInfo) {
+		t.Fatalf("cwd = %q, want %q", got, dir)
+	}
+}
+
+func TestServiceStatusText(t *testing.T) {
+	tests := []struct {
+		status service.Status
+		want   string
+	}{
+		{status: service.StatusRunning, want: "running"},
+		{status: service.StatusStopped, want: "stopped"},
+		{status: service.StatusUnknown, want: "unknown"},
+	}
+
+	for _, tt := range tests {
+		if got := serviceStatusText(tt.status); got != tt.want {
+			t.Fatalf("serviceStatusText(%d) = %q, want %q", tt.status, got, tt.want)
+		}
+	}
 }
 
 func TestEnsureDotEnv(t *testing.T) {

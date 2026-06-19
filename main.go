@@ -14,9 +14,16 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/kardianos/service"
 )
 
 const (
+	serviceName             = "go-google-translate-proxy"
+	serviceDisplayName      = "Google Translate Proxy"
+	serviceDescription      = "Google Translate proxy for Immersive Translate custom API."
+	serviceRunCommand       = "service-run"
+	serviceWorkDirFlag      = "--workdir"
 	defaultPort             = "8080"
 	defaultGoogleURL        = "https://translate-pa.googleapis.com/v1/translateHtml"
 	defaultGoogleAPIKey     = "AIzaSyATBXajvzQLTDHEQbcpq0Ihe0vWDHmO520"
@@ -27,6 +34,7 @@ const (
 	serverReadTimeout       = 15 * time.Second
 	serverWriteTimeout      = 45 * time.Second
 	serverIdleTimeout       = 60 * time.Second
+	serverShutdownTimeout   = 10 * time.Second
 )
 
 //go:embed .env.example
@@ -40,6 +48,10 @@ type config struct {
 
 type app struct {
 	translator translator
+}
+
+type serviceProgram struct {
+	server *http.Server
 }
 
 type translator interface {
@@ -72,27 +84,175 @@ type errorResponse struct {
 }
 
 func main() {
+	args := os.Args[1:]
+	if len(args) > 0 && args[0] == serviceRunCommand {
+		if err := applyServiceRunArgs(args[1:]); err != nil {
+			log.Fatalf("service args: %v", err)
+		}
+	}
+
+	program := &serviceProgram{}
+	svc, err := service.New(program, newServiceConfig())
+	if err != nil {
+		log.Fatalf("create service: %v", err)
+	}
+
+	if len(args) > 0 {
+		runCommand(svc, args[0])
+		return
+	}
+
+	if !service.Interactive() {
+		if err := svc.Run(); err != nil {
+			log.Fatalf("run service: %v", err)
+		}
+		return
+	}
+
+	if err := runServer(); err != nil {
+		log.Fatalf("listen and serve: %v", err)
+	}
+}
+
+func newServiceConfig() *service.Config {
+	workingDirectory, err := os.Getwd()
+	if err != nil {
+		log.Fatalf("get working directory: %v", err)
+	}
+
+	return &service.Config{
+		Name:             serviceName,
+		DisplayName:      serviceDisplayName,
+		Description:      serviceDescription,
+		WorkingDirectory: workingDirectory,
+		Arguments:        []string{serviceRunCommand, serviceWorkDirFlag, workingDirectory},
+		Option: service.KeyValue{
+			"Restart":                "on-failure",
+			"OnFailure":              "restart",
+			"OnFailureDelayDuration": "5s",
+		},
+	}
+}
+
+func runCommand(svc service.Service, command string) {
+	switch strings.ToLower(command) {
+	case serviceRunCommand:
+		if err := svc.Run(); err != nil {
+			log.Fatalf("run service: %v", err)
+		}
+	case "run":
+		if err := runServer(); err != nil {
+			log.Fatalf("listen and serve: %v", err)
+		}
+	case "install", "uninstall", "start", "stop", "restart":
+		if err := service.Control(svc, strings.ToLower(command)); err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("%s %s ok\n", serviceName, strings.ToLower(command))
+	case "status":
+		status, err := svc.Status()
+		if err != nil {
+			log.Fatalf("service status: %v", err)
+		}
+		fmt.Println(serviceStatusText(status))
+	case "help", "-h", "--help":
+		printUsage()
+	default:
+		printUsage()
+		os.Exit(2)
+	}
+}
+
+func applyServiceRunArgs(args []string) error {
+	for i := 0; i < len(args); i++ {
+		if args[i] != serviceWorkDirFlag {
+			return fmt.Errorf("unknown argument %q", args[i])
+		}
+		i++
+		if i >= len(args) || strings.TrimSpace(args[i]) == "" {
+			return fmt.Errorf("%s requires a path", serviceWorkDirFlag)
+		}
+		if err := os.Chdir(args[i]); err != nil {
+			return fmt.Errorf("set working directory: %w", err)
+		}
+	}
+	return nil
+}
+
+func printUsage() {
+	fmt.Printf("Usage: %s [run|install|uninstall|start|stop|restart|status]\n", serviceName)
+}
+
+func serviceStatusText(status service.Status) string {
+	switch status {
+	case service.StatusRunning:
+		return "running"
+	case service.StatusStopped:
+		return "stopped"
+	default:
+		return "unknown"
+	}
+}
+
+func (p *serviceProgram) Start(service.Service) error {
+	server, err := newServer()
+	if err != nil {
+		return err
+	}
+	p.server = server
+
+	go func() {
+		if err := serve(server); err != nil {
+			log.Fatalf("listen and serve: %v", err)
+		}
+	}()
+
+	return nil
+}
+
+func (p *serviceProgram) Stop(service.Service) error {
+	if p.server == nil {
+		return nil
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), serverShutdownTimeout)
+	defer cancel()
+	return p.server.Shutdown(ctx)
+}
+
+func runServer() error {
+	server, err := newServer()
+	if err != nil {
+		return err
+	}
+	return serve(server)
+}
+
+func newServer() (*http.Server, error) {
 	if err := ensureDotEnv(".env", ".env.example"); err != nil {
-		log.Fatalf("ensure .env: %v", err)
+		return nil, fmt.Errorf("ensure .env: %w", err)
 	}
 	if err := loadDotEnv(".env"); err != nil {
-		log.Fatalf("load .env: %v", err)
+		return nil, fmt.Errorf("load .env: %w", err)
 	}
 
 	cfg := loadConfig()
-	server := &http.Server{
+	return &http.Server{
 		Addr:              ":" + cfg.Port,
 		Handler:           newApp(newGoogleTranslator(cfg.GoogleURL, cfg.APIKey, nil)).routes(),
 		ReadHeaderTimeout: serverReadHeaderTimeout,
 		ReadTimeout:       serverReadTimeout,
 		WriteTimeout:      serverWriteTimeout,
 		IdleTimeout:       serverIdleTimeout,
-	}
+	}, nil
+}
 
-	log.Printf("listening on :%s", cfg.Port)
+func serve(server *http.Server) error {
+	log.Printf("listening on %s", server.Addr)
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.Fatalf("listen and serve: %v", err)
+		return err
 	}
+	return nil
 }
 
 func loadConfig() config {

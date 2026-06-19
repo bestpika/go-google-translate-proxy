@@ -1,3 +1,7 @@
 module go-google-translate-proxy
 
-go 1.21
+go 1.25.0
+
+require github.com/kardianos/service v1.2.4
+
+require golang.org/x/sys v0.46.0 // indirect
