@@ -29,6 +29,12 @@
 - [x] 支援未設定 `GOOGLE_TRANSLATE_API_KEY` 時使用程式內建預設公開 key。
 - [x] 補上 `loadConfig` 預設值與環境變數覆寫測試。
 - [x] 更新 `README.md` 與 `SPEC.md` 的 API key 缺省行為說明。
+- [x] 升級 Go module 至 Go 1.25.0。
+- [x] 加入最新版 `github.com/kardianos/service` 服務管理套件。
+- [x] 支援 `run`、`install`、`uninstall`、`start`、`stop`、`restart` 與 `status` 指令。
+- [x] 服務安裝時記錄工作目錄，讓服務模式可讀取同目錄 `.env`。
+- [x] 補上服務工作目錄與狀態文字測試。
+- [x] 更新 `README.md` 與 `SPEC.md` 的服務安裝說明。
 
 ## 提交策略
 

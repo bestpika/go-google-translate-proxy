@@ -13,6 +13,7 @@
 - 首次啟動若沒有 `.env`，會使用 `.env.example` 範本自動建立。
 - 提供 `build.ps1` 編譯目前環境，或依參數編譯 Windows、Linux、macOS 的 x86 與 ARM 執行檔到 `dist` 目錄。
 - 提供 GitHub Actions，在推送 `v*` tag 時全平台編譯並上傳 GitHub Release。
+- 執行檔可直接安裝、啟動、停止或移除作業系統服務。
 
 ## 設定
 
@@ -38,7 +39,39 @@ go run .
 
 預設監聽連接埠為 `8080`，可透過 `PORT` 覆寫。
 
+執行檔也可明確使用 `run` 前景啟動：
+
+```powershell
+.\go-google-translate-proxy.exe run
+```
+
+## 服務安裝
+
+編譯後的執行檔可自行安裝成系統服務。請在放置 `.env` 的目錄執行 `install`，服務會記住該目錄作為工作目錄。
+
+```powershell
+.\go-google-translate-proxy.exe install
+.\go-google-translate-proxy.exe start
+.\go-google-translate-proxy.exe status
+```
+
+可用指令如下：
+
+| 指令 | 說明 |
+| --- | --- |
+| `run` | 前景執行服務。 |
+| `install` | 安裝系統服務。 |
+| `start` | 啟動系統服務。 |
+| `stop` | 停止系統服務。 |
+| `restart` | 重新啟動系統服務。 |
+| `status` | 顯示服務狀態。 |
+| `uninstall` | 移除系統服務。 |
+
+Windows 安裝或移除服務通常需要系統管理員權限；Linux 與 macOS 依服務管理器設定可能需要 `sudo`。
+
 ## 編譯
+
+需要 Go 1.25 以上。
 
 ```powershell
 .\build.ps1
