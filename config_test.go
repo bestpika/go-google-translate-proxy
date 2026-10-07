@@ -12,7 +12,7 @@ func TestLoadConfig(t *testing.T) {
 		file, env map[string]string
 		want      config
 	}{
-		{"defaults", nil, nil, config{defaultPort, defaultGoogleURL, defaultGoogleAPIKey}},
+		{"defaults", nil, nil, config{"9009", defaultGoogleURL, defaultGoogleAPIKey}},
 		{"file", map[string]string{"PORT": "9090", "GOOGLE_TRANSLATE_URL": "http://example.test/path", "GOOGLE_TRANSLATE_API_KEY": "file-key"}, nil, config{"9090", "http://example.test/path", "file-key"}},
 		{"environment", map[string]string{"PORT": "9090", "GOOGLE_TRANSLATE_API_KEY": "file-key"}, map[string]string{"PORT": " 7070 ", "GOOGLE_TRANSLATE_API_KEY": " env-key "}, config{"7070", defaultGoogleURL, "env-key"}},
 		{"empty environment", map[string]string{"PORT": "9090"}, map[string]string{"PORT": ""}, config{"9090", defaultGoogleURL, defaultGoogleAPIKey}},

@@ -214,7 +214,7 @@ func TestTranslateIntegration(t *testing.T) {
 		io.WriteString(w, `[["你好","世界"],"metadata"]`)
 	}))
 	defer upstream.Close()
-	proxy := httptest.NewServer(newServer(config{Port: "8080", GoogleURL: upstream.URL, APIKey: "test-key"}).Handler)
+	proxy := httptest.NewServer(newServer(config{Port: defaultPort, GoogleURL: upstream.URL, APIKey: "test-key"}).Handler)
 	defer proxy.Close()
 	resp, err := proxy.Client().Post(proxy.URL+"/translate", "application/json", strings.NewReader(`{"target_lang":"zh-TW","text_list":["Hello","World"]}`))
 	if err != nil {

@@ -35,6 +35,48 @@ func TestNewServer(t *testing.T) {
 	}
 }
 
+func TestLoadServerPort(t *testing.T) {
+	example, err := os.ReadFile(".env.example")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tt := range []struct {
+		name            string
+		file, env, want string
+		external        bool
+	}{
+		{"external default", "", "", "9009", true},
+		{"embedded default", "", "", "9009", false},
+		{"existing file", "PORT=8080\n", "", "8080", false},
+		{"existing environment", "", "8080", "8080", false},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Chdir(t.TempDir())
+			t.Setenv("PORT", tt.env)
+			t.Setenv("GOOGLE_TRANSLATE_URL", "")
+			t.Setenv("GOOGLE_TRANSLATE_API_KEY", "")
+			wantFile := string(example)
+			if tt.external {
+				if err := os.WriteFile(".env.example", example, 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if tt.file != "" {
+				wantFile = tt.file
+				if err := os.WriteFile(".env", []byte(tt.file), 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if server, err := loadServer(); err != nil || server.Addr != ":"+tt.want {
+				t.Fatalf("server=%v error=%v want port=%s", server, err, tt.want)
+			}
+			if content, err := os.ReadFile(".env"); err != nil || string(content) != wantFile {
+				t.Fatalf("unexpected .env content=%q error=%v", content, err)
+			}
+		})
+	}
+}
+
 func TestServerBindFailure(t *testing.T) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
