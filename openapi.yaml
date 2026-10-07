@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: Google Translate Proxy for Immersive Translate
+  title: Immersive Translate Google 翻譯代理
   version: 0.1.0
   description: 將 Google Translate translateHtml 包裝成 Immersive Translate 自訂 API 的服務。
 servers:
@@ -8,7 +8,8 @@ servers:
 paths:
   /healthz:
     get:
-      summary: 健康檢查
+      summary: 存活檢查
+      description: 不呼叫 Google，不保證上游可用；其他 HTTP 方法回傳 405 與 Allow 標頭。
       operationId: healthz
       responses:
         "200":
@@ -23,9 +24,21 @@ paths:
                   status:
                     type: string
                     example: ok
+        "405":
+          description: HTTP 方法不支援
+          headers:
+            Allow:
+              schema:
+                type: string
+                enum: [GET]
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /translate:
     post:
       summary: 翻譯文字陣列
+      description: 保持翻譯筆數與順序。建議 application/json，但不強制檢查 Content-Type；其他 HTTP 方法回傳 405。
       operationId: translate
       requestBody:
         required: true
@@ -48,7 +61,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/TranslateResponse"
         "400":
-          description: 請求格式錯誤
+          description: 格式或欄位錯誤、未知欄位或尾端額外內容
           content:
             application/json:
               schema:
@@ -61,6 +74,11 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "405":
           description: HTTP 方法不支援
+          headers:
+            Allow:
+              schema:
+                type: string
+                enum: [POST]
           content:
             application/json:
               schema:
@@ -72,7 +90,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "502":
-          description: Google 上游錯誤
+          description: 上游錯誤、格式或筆數不符、回應超過 1 MiB、取消或逾時
           content:
             application/json:
               schema:
@@ -81,25 +99,30 @@ components:
   schemas:
     TranslateRequest:
       type: object
-      description: 請求 body 最大 1 MiB。
+      additionalProperties: false
+      description: 單一 JSON 物件，含尾端空白最大 1 MiB；不接受額外 JSON 或非空白內容。
       required:
         - target_lang
         - text_list
       properties:
         source_lang:
           type: string
-          description: 來源語言代碼，空值時視為 auto。
+          nullable: true
+          description: 來源語言代碼，去除前後空白後空值或 null 視為 auto。
           example: en
         target_lang:
           type: string
-          description: 目標語言代碼。
+          minLength: 1
+          pattern: '\S'
+          description: 目標語言代碼，去除前後空白後不可為空。
           example: zh-TW
         text_list:
           type: array
-          description: 待翻譯文字清單。
+          description: 待翻譯文字清單，保留每筆文字的原始空白。
           minItems: 1
           items:
             type: string
+            minLength: 1
           example:
             - Hello world
     TranslateResponse:
@@ -119,7 +142,7 @@ components:
       properties:
         detected_source_lang:
           type: string
-          description: 偵測或使用的來源語言。
+          description: 使用的來源語言，auto 原樣回傳，不代表真正偵測結果。
           example: en
         text:
           type: string

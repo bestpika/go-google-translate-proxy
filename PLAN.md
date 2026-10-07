@@ -2,41 +2,10 @@
 
 ## TODO
 
-- [x] 建立 Go module。
-- [x] 建立 HTTP server 入口。
-- [x] 加入 `.env` 載入邏輯，允許不存在 `.env` 時改用系統環境變數。
-- [x] 首次啟動若 `.env` 不存在，自動由 `.env.example` 建立。
-- [x] 實作 `GET /healthz` 健康檢查。
-- [x] 實作 `POST /translate` 請求解析與驗證。
-- [x] 實作 Google Translate `translateHtml` client。
-- [x] 將 Google 回應映射為 Immersive Translate 回應格式。
-- [x] 加入一致的 JSON 錯誤回應格式。
-- [x] 加入 HTTP server 逾時與 1 MiB 請求 body 限制，降低資源耗盡風險。
-- [x] 撰寫 handler 與 Google client 測試。
-- [x] 撰寫 `.env` 自動建立測試。
-- [x] 新增 `build.ps1` 編譯腳本。
-- [x] 支援 Windows、Linux、macOS 的 x86 與 ARM 編譯輸出。
-- [x] 調整 `build.ps1` 預設只編譯目前環境，並用平台參數選擇輸出目標。
-- [x] 將編譯輸出目錄 `dist` 加入忽略。
-- [x] 執行 `gofmt`。
-- [x] 執行 `go test ./...`。
-- [x] 視實作結果更新 `README.md`、`SPEC.md`、`API_SPEC.md` 與 `openapi.yaml`。
-- [x] 新增 MIT 授權檔並更新 README 授權說明。
-- [x] 新增 GitHub Actions release workflow，於 `v*` tag push 時觸發。
-- [x] 在 release workflow 執行測試與全平台編譯。
-- [x] 將 `dist/*` 上傳至 GitHub Release。
-- [x] 更新 `README.md` 與 `SPEC.md` 的自動發佈說明。
-- [x] 支援未設定 `GOOGLE_TRANSLATE_API_KEY` 時使用程式內建預設公開 key。
-- [x] 補上 `loadConfig` 預設值與環境變數覆寫測試。
-- [x] 更新 `README.md` 與 `SPEC.md` 的 API key 缺省行為說明。
-- [x] 升級 Go module 至 Go 1.25.0。
-- [x] 加入最新版 `github.com/kardianos/service` 服務管理套件。
-- [x] 支援 `run`、`install`、`uninstall`、`start`、`stop`、`restart` 與 `status` 指令。
-- [x] 服務安裝時記錄工作目錄，讓服務模式可讀取同目錄 `.env`。
-- [x] 補上服務工作目錄與狀態文字測試。
-- [x] 更新 `README.md` 與 `SPEC.md` 的服務安裝說明。
+目前沒有待實作項目。已完成的重構與驗證紀錄移至 `CHANGELOG.md`；環境限制與交接資訊見 `MEMORY.md`。
 
 ## 提交策略
 
-- 程式碼或 CI workflow 完成後先提交。
-- 文件更新另行提交，避免文件與程式碼混在同一個提交中。
+- 程式碼、測試、建置腳本與持續整合先提交。
+- 規格、使用說明與交接文件另行提交。
+- 使用約定式提交，訊息以臺灣正體中文撰寫。
