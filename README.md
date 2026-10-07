@@ -26,7 +26,7 @@
 ```env
 GOOGLE_TRANSLATE_URL=https://translate-pa.googleapis.com/v1/translateHtml
 GOOGLE_TRANSLATE_API_KEY=AIzaSyATBXajvzQLTDHEQbcpq0Ihe0vWDHmO520
-PORT=8080
+PORT=9009
 ```
 
 `.env` 只供本機覆寫設定使用，已由 `.gitignore` 忽略。若改用私人金鑰，請勿提交。
@@ -43,7 +43,9 @@ PORT=8080
 go run .
 ```
 
-預設在所有網路介面監聽連接埠 `8080`，可透過 `PORT` 覆寫。本機可使用 `localhost`，內網裝置可使用這台電腦的 IP；請使用防火牆限制可信任的來源。
+預設在所有網路介面監聽連接埠 `9009`，可透過 `PORT` 覆寫。本機可使用 `localhost`，內網裝置可使用這台電腦的 IP；請使用防火牆限制可信任的來源。
+
+若從舊版升級，既有 `.env` 或系統環境變數中的 `PORT` 不會自動變更；若仍設定 `PORT=8080`，服務仍使用 `8080`。要改用新連接埠，請自行將設定更新為 `9009`。
 
 執行檔也可明確使用 `run` 前景啟動：
 
@@ -172,7 +174,7 @@ go vet ./...
 在 Immersive Translate 自訂 API 中設定服務網址：
 
 ```text
-http://localhost:8080/translate
+http://localhost:9009/translate
 ```
 
 若服務部署在遠端，請改成自己的 HTTPS 網址。

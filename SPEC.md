@@ -85,11 +85,12 @@ Google 回應最大 1 MiB，讀取額外一個位元組以識別超量，不接�
 | --- | --- | --- | --- |
 | `GOOGLE_TRANSLATE_URL` | 否 | `https://translate-pa.googleapis.com/v1/translateHtml` | Google 上游 URL，主要供測試或除錯覆寫。 |
 | `GOOGLE_TRANSLATE_API_KEY` | 否 | 程式內建公開 key | Google Translate API key，可用環境變數覆寫。 |
-| `PORT` | 否 | `8080` | HTTP 服務監聽連接埠。 |
+| `PORT` | 否 | `9009` | HTTP 服務監聽連接埠。 |
 
 本機開發可使用 `.env`。首次啟動若 `.env` 不存在，服務會優先複製外部 `.env.example`；若執行環境沒有 `.env.example`，則使用編譯時嵌入的範本內容。若 `.env` 與系統環境變數都沒有設定 `GOOGLE_TRANSLATE_API_KEY`，服務會使用程式內建公開 key。正式環境可直接使用平台提供的環境變數功能覆寫設定。
 
 - 設定優先順序為非空系統環境變數、檔案、預設值；選定值去除前後空白後若為空，改用預設值。
+- 預設連接埠改為 `9009` 不會遷移既有 `PORT` 設定，也不覆寫既有 `.env`。
 - 解析 `.env` 不呼叫 `os.Setenv`；重複鍵維持第一個非空值優先。
 - 支援 UTF-8 BOM、空行、註解行、簡單單引號及雙引號；忽略不含等號的行，不展開變數或解析行尾註解。單行受標準掃描器約 64 KiB 限制。
 - 使用排他建立方式，避免同時啟動覆寫既有 `.env`；啟動工作目錄須能建立缺少的檔案。

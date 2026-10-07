@@ -4,7 +4,7 @@ info:
   version: 0.1.0
   description: 將 Google Translate translateHtml 包裝成 Immersive Translate 自訂 API 的服務。
 servers:
-  - url: http://localhost:8080
+  - url: http://localhost:9009
 paths:
   /healthz:
     get:
