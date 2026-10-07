@@ -12,7 +12,82 @@ param(
 $ErrorActionPreference = "Stop"
 
 $ProjectRoot = $PSScriptRoot
-$OutputPath = Join-Path -Path $ProjectRoot -ChildPath $OutputDir
+
+function Assert-SafeBuildPath {
+    param([string]$Root, [string]$Path, [bool]$Clean)
+
+    $comparison = [StringComparison]::Ordinal
+    if ([IO.Path]::DirectorySeparatorChar -eq '\') {
+        $comparison = [StringComparison]::OrdinalIgnoreCase
+    }
+    $rootPath = [IO.Path]::GetFullPath($Root).TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+    $outputPath = [IO.Path]::GetFullPath($Path).TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+    $volumeRoot = [IO.Path]::GetPathRoot([IO.Path]::GetFullPath($Path)).TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+    $separator = [IO.Path]::DirectorySeparatorChar
+    if ($outputPath.Equals($volumeRoot, $comparison) -or $outputPath.Equals($rootPath, $comparison) -or $rootPath.StartsWith($outputPath + $separator, $comparison)) {
+        throw '輸出目錄不可為檔案系統根目錄、專案根目錄或其上層目錄。'
+    }
+    $insideProject = $outputPath.StartsWith($rootPath + $separator, $comparison)
+    if ($Clean -and -not $insideProject) {
+        throw '-Clean 僅允許清理專案內的輸出子目錄。'
+    }
+    if ($insideProject) {
+        $relative = $outputPath.Substring($rootPath.Length + 1)
+        if (($relative -split '[\\/]') | Where-Object { $_.TrimEnd(' ', '.') -in @('.git', '.github') }) {
+            throw '輸出目錄不可包含版本庫或工作流程資料。'
+        }
+    }
+    $ancestor = $outputPath
+    while ($ancestor) {
+        if (Test-Path -LiteralPath $ancestor) {
+            $item = Get-Item -LiteralPath $ancestor -Force
+            if ($item.Name -in @('.git', '.github')) {
+                throw '輸出目錄不可位於版本庫或工作流程資料內。'
+            }
+            if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+                throw '輸出目錄及其上層不可包含符號連結或目錄連接。'
+            }
+            if (-not $item.PSIsContainer) {
+                throw '輸出路徑及其上層必須為目錄。'
+            }
+        }
+        $ancestor = [IO.Path]::GetDirectoryName($ancestor)
+    }
+    if ($Clean -and (Test-Path -LiteralPath $outputPath)) {
+        $pending = [Collections.Generic.Stack[string]]::new()
+        $pending.Push($outputPath)
+        while ($pending.Count -gt 0) {
+            foreach ($item in Get-ChildItem -LiteralPath $pending.Pop() -Force) {
+                if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0 -or $item.Name -in @('.git', '.github')) {
+                    throw '清理目錄內不可包含連結或版本庫資料。'
+                }
+                if ($item.PSIsContainer) {
+                    $pending.Push($item.FullName)
+                }
+            }
+        }
+    }
+}
+
+function Assert-BinaryName {
+    param([string]$Name)
+
+    if ([string]::IsNullOrWhiteSpace($Name) -or $Name -in @('.', '..') -or $Name -match '[\\/:*?"<>|\x00-\x1f]') {
+        throw 'BinaryName 必須是有效的檔名，不可包含路徑或萬用字元。'
+    }
+}
+
+if ([string]::IsNullOrWhiteSpace($OutputDir)) {
+    throw 'OutputDir 不可為空白。'
+}
+Assert-BinaryName -Name $BinaryName
+if ([IO.Path]::IsPathRooted($OutputDir)) {
+    $OutputPath = [IO.Path]::GetFullPath($OutputDir)
+}
+else {
+    $OutputPath = [IO.Path]::GetFullPath((Join-Path -Path $ProjectRoot -ChildPath $OutputDir))
+}
+Assert-SafeBuildPath -Root $ProjectRoot -Path $OutputPath -Clean $Clean.IsPresent
 
 function Get-TargetLabel {
     param(
@@ -88,18 +163,18 @@ function Get-CurrentBuildTarget {
 }
 
 $AllTargets = @(
-    [pscustomobject]@{ GOOS = "windows"; GOARCH = "386";   GOARM = $null; Label = "windows-386";   Extension = ".exe" },
-    [pscustomobject]@{ GOOS = "windows"; GOARCH = "amd64"; GOARM = $null; Label = "windows-amd64"; Extension = ".exe" },
-    [pscustomobject]@{ GOOS = "windows"; GOARCH = "arm";   GOARM = "7";   Label = "windows-armv7"; Extension = ".exe" },
-    [pscustomobject]@{ GOOS = "windows"; GOARCH = "arm64"; GOARM = $null; Label = "windows-arm64"; Extension = ".exe" },
-    [pscustomobject]@{ GOOS = "linux";   GOARCH = "386";   GOARM = $null; Label = "linux-386";     Extension = "" },
-    [pscustomobject]@{ GOOS = "linux";   GOARCH = "amd64"; GOARM = $null; Label = "linux-amd64";   Extension = "" },
-    [pscustomobject]@{ GOOS = "linux";   GOARCH = "arm";   GOARM = "5";   Label = "linux-armv5";   Extension = "" },
-    [pscustomobject]@{ GOOS = "linux";   GOARCH = "arm";   GOARM = "6";   Label = "linux-armv6";   Extension = "" },
-    [pscustomobject]@{ GOOS = "linux";   GOARCH = "arm";   GOARM = "7";   Label = "linux-armv7";   Extension = "" },
-    [pscustomobject]@{ GOOS = "linux";   GOARCH = "arm64"; GOARM = $null; Label = "linux-arm64";   Extension = "" },
-    [pscustomobject]@{ GOOS = "darwin";  GOARCH = "amd64"; GOARM = $null; Label = "macos-amd64";   Extension = "" },
-    [pscustomobject]@{ GOOS = "darwin";  GOARCH = "arm64"; GOARM = $null; Label = "macos-arm64";   Extension = "" }
+    New-BuildTarget -GOOS windows -GOARCH 386
+    New-BuildTarget -GOOS windows -GOARCH amd64
+    New-BuildTarget -GOOS windows -GOARCH arm -GOARM 7
+    New-BuildTarget -GOOS windows -GOARCH arm64
+    New-BuildTarget -GOOS linux -GOARCH 386
+    New-BuildTarget -GOOS linux -GOARCH amd64
+    New-BuildTarget -GOOS linux -GOARCH arm -GOARM 5
+    New-BuildTarget -GOOS linux -GOARCH arm -GOARM 6
+    New-BuildTarget -GOOS linux -GOARCH arm -GOARM 7
+    New-BuildTarget -GOOS linux -GOARCH arm64
+    New-BuildTarget -GOOS darwin -GOARCH amd64
+    New-BuildTarget -GOOS darwin -GOARCH arm64
 )
 
 if ($All) {
@@ -138,6 +213,7 @@ $previousEnv = @{
     GOARM       = $env:GOARM
 }
 
+Push-Location -LiteralPath $ProjectRoot
 try {
     foreach ($Target in $Targets) {
         $env:CGO_ENABLED = "0"
@@ -166,6 +242,7 @@ try {
     }
 }
 finally {
+    Pop-Location
     foreach ($Name in $previousEnv.Keys) {
         if ($null -eq $previousEnv[$Name]) {
             Remove-Item -LiteralPath "Env:$Name" -ErrorAction SilentlyContinue

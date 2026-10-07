@@ -1,0 +1,58 @@
+name: 持續整合
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: 測試與靜態檢查
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: 取得程式碼
+        uses: actions/checkout@v4
+      - name: 設定 Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: 檢查 Go 格式
+        shell: pwsh
+        run: |
+          $files = @(Get-ChildItem -Filter *.go | ForEach-Object { $_.FullName })
+          $unformatted = @(gofmt -l $files)
+          if ($LASTEXITCODE -ne 0 -or $unformatted.Count -gt 0) {
+            throw "Go 格式檢查失敗：$unformatted"
+          }
+      - name: 測試
+        run: go test -mod=readonly -count=1 -cover ./...
+      - name: 靜態檢查
+        run: go vet -mod=readonly ./...
+      - name: 建置腳本安全測試
+        shell: pwsh
+        run: ./build_test.ps1
+      - name: 競態檢查
+        if: runner.os == 'Linux'
+        env:
+          CGO_ENABLED: "1"
+        run: go test -mod=readonly -race -count=1 ./...
+
+  build:
+    name: 跨平台建置
+    runs-on: ubuntu-latest
+    steps:
+      - name: 取得程式碼
+        uses: actions/checkout@v4
+      - name: 設定 Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: 建置全部 12 種目標
+        shell: pwsh
+        run: ./build.ps1 -All

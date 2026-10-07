@@ -1,4 +1,4 @@
-name: Release
+name: 發佈
 
 on:
   push:
@@ -10,26 +10,38 @@ permissions:
 
 jobs:
   release:
-    name: Build and Release
+    name: 建置與發佈
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: 取得程式碼
         uses: actions/checkout@v4
 
-      - name: Setup Go
+      - name: 設定 Go
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
 
-      - name: Test
-        run: go test ./...
+      - name: 測試
+        run: go test -mod=readonly -count=1 ./...
 
-      - name: Build all targets
+      - name: 靜態檢查
+        run: go vet -mod=readonly ./...
+
+      - name: 競態檢查
+        env:
+          CGO_ENABLED: "1"
+        run: go test -mod=readonly -race -count=1 ./...
+
+      - name: 建置腳本安全測試
+        shell: pwsh
+        run: ./build_test.ps1
+
+      - name: 建置全部目標
         shell: pwsh
         run: ./build.ps1 -Clean -All
 
-      - name: Publish release
+      - name: 發佈產物
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*
